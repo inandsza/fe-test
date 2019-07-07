@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import expect from 'expect';
-import { App } from './App';
+import { TestRegisterPage } from '../components/RegisterPage';
+import { App } from '../App';
 import { configure } from 'enzyme';
 import { Link } from 'react-router-dom';
 import { MemoryRouter } from 'react-router'
@@ -11,33 +12,38 @@ import { PropTypes } from 'prop-types';
 import renderer from 'react-test-renderer';
 import {spy} from 'sinon';
 import { Provider } from 'react-redux';
-import { store } from './helpers';
+import { store } from '../helpers';
 import configureStore from 'redux-mock-store'
-import { Router, Route } from 'react-router-dom';
-import { PrivateRoute } from './PrivateRoute.js';
 
+const middlewares = []
+const mockStore = configureStore(middlewares)
 configure({ adapter: new Adapter() });
+let mockedStore = mockStore({})
 
 export const CustomProvider = ({ children }) => {
   return (
     <Provider store={store}>
+      <MemoryRouter>
         {children}
+      </MemoryRouter>
     </Provider>
   );
 };
 
-describe("Test AppComponent", () => {
+describe("Test RegisterPage component", () => {
   it('check route, dispatch and store setup for component', () => {
     // test will not compile if component is not correctly setup
-    const wrapper = mount(<CustomProvider><App /></CustomProvider>);
+    const wrapper = mount(<MemoryRouter><TestRegisterPage dispatch={spy()}/></MemoryRouter>, {
+                            context: {store: mockedStore},
+                            childContextTypes: {store: PropTypes.object.isRequired}});
+    const inst = wrapper.children();
+    let uname = inst.find('.username');
+    let pwd = inst.find('.password');
+    uname.value = 'demo_username';
+    pwd.value = 'demo_password';
+    uname.simulate('change');
+    pwd.simulate('change');
+    wrapper.update();
     expect(true).toBeTruthy();
-  });
-
-  it('check for redirections', () => {
-    const wrapper = mount(<CustomProvider><App /></CustomProvider>);
-    let a = wrapper.find(PrivateRoute);
-    let b = wrapper.find(Route);
-    expect(a.length).toEqual(1);
-    expect(b.length).toEqual(3);
   });
 });
